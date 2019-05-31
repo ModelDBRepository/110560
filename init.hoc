@@ -1,0 +1,58 @@
+// init.hoc loads a potassium cell by default into NEURON for
+// potential use by ModelView but then allows a restart with any model
+
+create soma
+access soma
+
+membranecap = 1    /* specific membrane capacitance in uF cm^-2 */
+membraneresist = 40000 /* specific membrane resistance in ohm cm^2 */
+axialresist = 100     /* axial resistivity in ohm cm */
+Vrest = -70               /* resting potential, mV */
+EK=-90
+Gbar=20
+V05=-10
+Z=10
+
+
+objref gplot, vplot, vC,BOX
+
+proc load_cell() {
+
+// $s1 filename
+
+  aspiny = 0
+  forall delete_section()
+  xopen($s1)
+  access soma
+	forall {
+		nseg*=5
+		insert pas
+		insert Potassium
+		gbar_Potassium=Gbar
+		v12_Potassium=V05
+		vSlope_Potassium=Z
+		tau_Potassium=3
+		e_pas = Vrest
+		ek= EK
+		g_pas=1/membraneresist 
+		Ra=axialresist 
+		cm=membranecap
+	}
+	soma  vC = new SEClamp(0.5)
+	vC.amp1=-120
+	vC.dur1=15400
+	vC.amp2=0
+	vC.dur2=1000
+
+	vC.rs=1e-5
+ }   
+
+// default loading of potassium L5 pyr model for ModelView
+// then supply choice for modeler
+
+load_cell("cells/A0606.hoc")
+
+xpanel("Choose K or Ca simulations")
+xbutton("Potassium conductance density", "xopen(\"potassium.hoc\")")
+xbutton("Calcium conductance density", "xopen(\"calcium.hoc\")")
+xpanel()

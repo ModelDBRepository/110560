@@ -1,0 +1,126 @@
+
+create soma
+access soma
+
+membranecap = 1    /* specific membrane capacitance in uF cm^-2 */
+membraneresist = 40000 /* specific membrane resistance in ohm cm^2 */
+axialresist = 100     /* axial resistivity in ohm cm */
+Vrest = -70               /* resting potential, mV */
+EK=-90
+Gbar=20
+V05=-10
+Z=10
+
+
+objref gplot, vplot, vC,BOX
+
+proc load_cell() {
+
+// $s1 filename
+
+  aspiny = 0
+  forall delete_section()
+  xopen($s1)
+  access soma
+	forall {
+		nseg*=5
+		insert pas
+		insert Potassium
+		gbar_Potassium=Gbar
+		v12_Potassium=V05
+		vSlope_Potassium=Z
+		tau_Potassium=3
+		e_pas = Vrest
+		ek= EK
+		g_pas=1/membraneresist 
+		Ra=axialresist 
+		cm=membranecap
+	}
+	soma  vC = new SEClamp(0.5)
+	vC.amp1=-120
+	vC.dur1=15400
+	vC.amp2=0
+	vC.dur2=1000
+
+	vC.rs=1e-5
+ }   
+
+
+
+
+proc DoIt(){
+
+	finitialize(Vrest)
+	fcurrent()
+
+	dt=100
+	for i=0,149 fadvance()
+
+	dt=10
+	for i=0,39 fadvance()
+
+	dt=0.1
+	for i=0,99 fadvance()
+
+	dt=0.025
+	for j=0,49 for i=0,39 fadvance()
+	
+	BOX = new HBox()
+	BOX.intercept(1)
+	vplot = new PlotShape()
+	vplot.variable("v")
+	vplot.scale(-80,0)
+	vplot.exec_menu("Show Diam")
+	vplot.exec_menu("Shape Plot")
+
+	gplot = new PlotShape()
+	gplot.variable("gk_Potassium")
+	gplot.scale(0,Gbar+0.5)
+	gplot.exec_menu("Show Diam")
+	gplot.exec_menu("Shape Plot")
+	xpanel("Information")
+	xlabel("The left graph displays the membrane potential") 
+	xlabel("in pseudo color in each compartment of the neuron while")
+	xlabel("the right graph displays the activation of the")
+	xlabel("voltage-gated conductance also in  pseudo color.")
+	xlabel("Change the value of the conductance density in ")
+	xlabel("panel or cell type to observe the different decay.")	
+	xpanel()
+	BOX.intercept(0)
+	BOX.map()
+
+} 
+
+proc fig1a() {
+  load_cell("cells/A0606.hoc")
+  DoIt()
+}
+
+proc fig1b() {
+  load_cell("cells/C050800E2.hoc")  
+  DoIt()
+}
+
+proc fig1c() {
+  load_cell("cells/C230998A-I3.hoc")
+  DoIt()
+}
+
+proc fig1d() {
+  load_cell("cells/j7_L4stellate.hoc") 
+  DoIt()
+}
+
+xpanel("Simulate")
+xvalue("Potassium conductance density", "Gbar")
+xbutton("1. L5 Pyramidal Neuron","fig1a()")
+xbutton("2. L4 interneuron","fig1b()")
+xbutton("3. L2/3 bipolar interneuron ","fig1c()")
+xbutton("4. L4 spiny stellate ","fig1d()")
+xpanel()
+
+
+
+
+
+
